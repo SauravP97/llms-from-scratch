@@ -6,8 +6,6 @@
 
 Building an understanding of Large Language Models (LLMs) from scratch is one of the most intellectually rewarding journeys in modern computer science. To truly grasp both the architecture and the training process, you must build a foundational pyramid: starting with the underlying math, moving to the core Transformer architecture, and scaling up to distributed training and alignment techniques.
 
-Here is a comprehensive, step-by-step roadmap to guide you from absolute basics to state-of-the-art LLM engineering.
-
 ## Phase 1: The Foundations (Prerequisites)
 Before you can build the engine, you need to understand the physics of it. LLMs are essentially massive matrix multiplication engines optimized by calculus.
 
