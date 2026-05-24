@@ -23,3 +23,7 @@ If you have $32$ Query heads and $8$ KV heads, that means you have $8$ groups. E
 We might wonder: Does repeating the KV heads waste memory, defeating the purpose of GQA? In this training/forward-pass implementation, yes, duplicating the tensors inside repeat_interleave uses temporary VRAM. However, this is primarily for training or simple batch processing.
 
 In actual deployment (inference), highly optimized engines like vLLM or custom CUDA kernels (like FlashAttention) compute GQA without ever explicitly copying the KV tensors in memory. They just fetch the same KV values from the cache for the queries in that group, which is where the massive speedup occurs.
+
+## References
+
+  - GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints (Google Research): https://arxiv.org/pdf/2305.13245
