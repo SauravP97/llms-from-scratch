@@ -1,5 +1,7 @@
 # Mixture of Experts
 
+![banner](../media/moe.png)
+
 Imagine you run a consulting firm. You could hire a team of generalists who know a little bit about everything. They’ll do an okay job on most tasks, but they’ll struggle with highly complex, niche problems. Alternatively, you could hire a team of specialists—an accountant, a lawyer, an engineer, and a marketer—and hire a manager to route incoming client problems to the right expert.
 
 MoE takes the second approach. Instead of forcing one massive neural network to learn everything, it divides the workload among multiple smaller, specialized networks (the "experts") and uses a "router" to decide which expert handles which piece of information.
