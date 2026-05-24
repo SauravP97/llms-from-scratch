@@ -1,5 +1,7 @@
 # Large Language Models (LLMs) from scratch in 2026
 
+![banner](./media/banner.jpeg)
+
 > Note: Although this is a Code-of-Conduct section, I will use this section to present a detailed roadmap for individuals starting their journey into Transformers & LLMs.
 
 Building an understanding of Large Language Models (LLMs) from scratch is one of the most intellectually rewarding journeys in modern computer science. To truly grasp both the architecture and the training process, you must build a foundational pyramid: starting with the underlying math, moving to the core Transformer architecture, and scaling up to distributed training and alignment techniques.
