@@ -102,3 +102,7 @@ Flash Attention solves this by keeping a running maximum.
   - The magic step: If the global maximum has changed, Flash Attention uses a simple mathematical correction (the correction_factor in the previous code) to retroactively scale the results from Block 1 down so they match the new reality.
 
 Without the running maximum, Flash Attention would either suffer from fatal arithmetic overflow, or it would require loading the entire matrix into memory to find the global maximum—which defeats the entire purpose of the algorithm!
+
+## References:
+
+  - FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness: https://arxiv.org/pdf/2205.14135
