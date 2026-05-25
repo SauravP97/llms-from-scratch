@@ -1,5 +1,7 @@
 # Flash Attention
 
+![banner](../media/flash-attn.png)
+
 Flash Attention is one of the most brilliant and impactful optimizations in modern AI. It is the reason we can now run Large Language Models (LLMs) with context windows of 100k+ tokens.
 
 It can seem intimidating because it sits exactly at the intersection of deep learning mathematics and low-level hardware engineering.
