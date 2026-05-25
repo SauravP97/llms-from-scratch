@@ -36,7 +36,7 @@ Instead of computing the whole matrix at once, we chop $Q$, $K$, and $V$ into "b
 Tiling sounds easy, but there is a mathematical roadblock: Softmax.
 To calculate the softmax of a single row, we need the sum of the entire row as the denominator:
 
-    $$\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}}$$
+  $$\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_{j=1}^{N} e^{x_j}}$$
 
 How can we calculate softmax block-by-block if we don't have the sum of the whole row yet? Flash Attention uses "Online Softmax." We keep track of a "running maximum" and a "running denominator" for each row. As we process new blocks, we update these running values and mathematically correct the older blocks on the fly.
 
@@ -48,7 +48,7 @@ To understand why Flash Attention tracks a running maximum, we first need to loo
 
 The standard softmax formula is:
 
-    $$\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_{j} e^{x_j}}$$
+  $$\text{softmax}(x_i) = \frac{e^{x_i}}{\sum_{j} e^{x_j}}$$
     
 The mathematical function $e^x$ grows incredibly fast.
 
@@ -64,11 +64,11 @@ To fix this, scientists realized you can subtract a constant from every input be
 
 The smartest constant to subtract is the maximum value in the vector. Let $m = \max(x)$. The formula becomes:
 
-    $$\text{softmax}(x_i) = \frac{e^{x_i - m}}{\sum_{j} e^{x_j - m}}$$
+  $$\text{softmax}(x_i) = \frac{e^{x_i - m}}{\sum_{j} e^{x_j - m}}$$
 
 Why does this work mathematically?By rules of exponents, we can pull $e^{-m}$ out of the fraction:
 
-    $$\frac{e^{x_i - m}}{\sum e^{x_j - m}} = \frac{e^{x_i} \cdot e^{-m}}{\sum (e^{x_j} \cdot e^{-m})} = \frac{e^{-m} \cdot e^{x_i}}{e^{-m} \cdot \sum e^{x_j}} = \frac{e^{x_i}}{\sum e^{x_j}}$$
+  $$\frac{e^{x_i - m}}{\sum e^{x_j - m}} = \frac{e^{x_i} \cdot e^{-m}}{\sum (e^{x_j} \cdot e^{-m})} = \frac{e^{-m} \cdot e^{x_i}}{e^{-m} \cdot \sum e^{x_j}} = \frac{e^{x_i}}{\sum e^{x_j}}$$
 
 Because the $e^{-m}$ term is on both the top and the bottom, it perfectly cancels out.
 
