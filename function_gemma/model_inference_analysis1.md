@@ -1,4 +1,4 @@
-# Function Gemma (fine-tuned from Gemma-3 270M model)
+# Function Gemma - Inference Analysis (Experiment 1)
 
 ## Prompt: Basic Function Calling
 
