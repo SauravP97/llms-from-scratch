@@ -14,7 +14,7 @@ This repo focuses on reproducing a `Function Gemma` like model capable of functi
 
 An Example User-Model communication will look like this:
 
-```json
+```
 SYSTEM: You are a helpful assistant with access to the following functions. Use them if required -
 {
     "name": "calculate_factorial",
