@@ -1,5 +1,7 @@
 # Building Function Gemma (fine-tuned from Gemma-3 270M model)
 
+![banner](../media/function-gemma-banner.jpeg)
+
 The aim of this exercise is to produce a [Function Gemma](https://ai.google.dev/gemma/docs/functiongemma) like model.
 
 > About Function Gemma: FunctionGemma is a specialized version of our `Gemma 3 270M` model tuned for function calling. It is designed as a strong base for further training into custom, fast, private, local agents that translate natural language into executable API actions.
