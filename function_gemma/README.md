@@ -225,3 +225,57 @@ The detailed inference analysis for the 1st experiment can be found [here](./inf
 The Compute graphs during the entire training process looked like this:
 
 <img src="../media/function-gemma-exp3/compute_charts_training.png" width="480px">
+
+## Inference
+Check out the [notebook](./trained_model_inference.ipynb) for full inference code.
+
+```python
+system_instructions = '''
+SYSTEM: You are a helpful assistant with access to the following functions. Use them if required -
+{
+    "name": "calculate_discount",
+    "description": "Calculate the discounted price of a product",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "original_price": {
+                "type": "number",
+                "description": "The original price of the product"
+            },
+            "discount_percentage": {
+                "type": "number",
+                "description": "The discount percentage"
+            }
+        },
+        "required": [
+            "original_price",
+            "discount_percentage"
+        ]
+    }
+}
+'''
+
+tooling_gemma_model = ToolingGemma(system_instructions=system_instructions)
+agent_response = tooling_gemma_model.generate('Can you please book a flight for me from New York to London?')
+
+print(agent_response)
+```
+
+### Output
+
+```
+ASSISTANT: I'm sorry, but I'm unable to assist with booking flights. My current capabilities are limited to calculating discounted prices based on original price and discount percentage. If you need help with that, feel free to ask! <|endoftext|>
+```
+
+### Continue User-Model interaction (persisting chats)
+
+```python
+agent_response = tooling_gemma_model.generate('Calculate the discounted price for 100 dollars at a discount of 30%')
+print(agent_response)
+```
+
+### Output
+
+```
+ASSISTANT: <functioncall> {"name": "calculate_discount", "arguments": '{"original_price": 100, "discount_percentage": 30}'} <|endoftext|>
+```
