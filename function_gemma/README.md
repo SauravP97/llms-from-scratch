@@ -1,6 +1,6 @@
 # Building Function Gemma (fine-tuned from Gemma-3 270M model)
 
-![banner](../media/function-gemma-banner.jpeg)
+![banner](../media/function-gemma-banner-new.png)
 
 The aim of this exercise is to produce a [Function Gemma](https://ai.google.dev/gemma/docs/functiongemma) like model.
 
