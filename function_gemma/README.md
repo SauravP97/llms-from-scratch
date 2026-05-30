@@ -1,16 +1,17 @@
-# Building Function Gemma (fine-tuned from Gemma-3 270M model)
+# Building Tooling Gemma (Inspired from FunctionGemma)
 
 ![banner](../media/function-gemma-banner-new.png)
 
 The aim of this exercise is to produce a [Function Gemma](https://ai.google.dev/gemma/docs/functiongemma) like model.
+I am calling it **Tooling Gemma**.
 
 > About Function Gemma: FunctionGemma is a specialized version of our `Gemma 3 270M` model tuned for function calling. It is designed as a strong base for further training into custom, fast, private, local agents that translate natural language into executable API actions.
 
-Function Gemma is a **270 Million** parameter model, can be downloaded from [HuggingFace](https://huggingface.co/google/functiongemma-270m-it).
+Tooling Gemma is a **270 Million** parameter model, can be downloaded from [HuggingFace](https://huggingface.co/SauravP97/tooling-gemma-270M-inst).
 
 ## Introduction
 
-This repo focuses on reproducing a `Function Gemma` like model capable of function calling. Our model will take APIs / Functions documentation (structure) as an input from the user along with user's query and will perform Function Call with right arguments wherever needed.
+This repo focuses on reproducing a `Function Gemma` like model named **Tooling Gemma** capable of function calling. Our model will take APIs / Functions documentation (structure) as an input from the user along with user's query and will perform Function Call with right arguments wherever needed.
 
 > Note: The Functions / APIs structure is generally provided as a part of the System Instructions.
 

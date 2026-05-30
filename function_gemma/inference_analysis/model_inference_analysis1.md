@@ -1,4 +1,4 @@
-# Function Gemma - Inference Analysis (Experiment 1)
+# Tooling Gemma - Inference Analysis (Experiment 1)
 
 ## Prompt: Basic Function Calling
 
