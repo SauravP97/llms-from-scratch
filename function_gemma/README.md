@@ -206,7 +206,7 @@ For the Fine-Tuning process, I kept following amount of rows from each scenarios
 
 ### Training
 
-I trained the model for around `1 hour 52 minutes` on the entire `54K` rows and achieved a **Loss** of around `0.15`.
+I trained the model for around `1 hour 52 minutes` on an `A100 GPU` for the entire `54K` rows and achieved a **Loss** of around `0.15`.
 
 <img src="../media/function-gemma-exp3/training_process.png" width="720px">
 
@@ -220,7 +220,7 @@ While the raw loss curve looks like this:
 
 ![raw-loss-curve](../media/function-gemma-exp3/train-losses.png)
 
-The detailed inference analysis for the 1st experiment can be found [here](./inference_analysis/model_inference_analysis3.md)
+The detailed inference analysis for the 3rd experiment can be found [here](./inference_analysis/model_inference_analysis3.md)
 
 The Compute graphs during the entire training process looked like this:
 
