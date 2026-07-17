@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent 2 Agent (A2A) Protocol | Interactive Lecture</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        'slate-900': '#0f172a',
+                        'slate-800': '#1e293b',
+                        'neon-blue': '#3b82f6',
+                        'neon-purple': '#8b5cf6',
+                        'neon-green': '#10b981',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.9) 100%);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+        }
+
+        /* Glowing text effects */
+        .text-glow {
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+        .text-glow-purple {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        /* Code syntax highlighting simulation */
+        .token.keyword { color: #c678dd; }
+        .token.string { color: #98c379; }
+        .token.function { color: #61afef; }
+        .token.comment { color: #5c6370; font-style: italic; }
+        .token.operator { color: #56b6c2; }
+        .token.class-name { color: #e5c07b; }
+
+        /* Custom input focus */
+        .terminal-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="antialiased font-sans selection:bg-neon-purple selection:text-white">
+
+    <div id="canvas-container">
+        <canvas id="networkCanvas"></canvas>
+    </div>
+
+    <nav class="fixed w-full z-50 glass border-b border-white/10 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-gradient-to-br from-neon-blue to-neon-purple flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                        <i class="fa-solid fa-robot text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        Saurav <span class="text-neon-blue">Prateek</span>
+                    </span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="#home" class="hover:text-neon-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">Home</a>
+                        <a href="#architecture" class="hover:text-neon-green px-3 py-2 rounded-md text-sm font-medium transition-colors">Architecture</a>
+                        <a href="#theory" class="hover:text-neon-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">A2A Theory</a>
+                        <a href="#demo" class="hover:text-neon-purple px-3 py-2 rounded-md text-sm font-medium transition-colors">Visualizer</a>
+                        <a href="#code" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-sm font-medium transition-all border border-white/10">Code Walkthrough</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden min-h-screen flex items-center">
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-sm font-medium text-slate-300 mb-8 animate-float">
+                <span class="w-2 h-2 rounded-full bg-neon-green animate-pulse"></span>
+                AI Engineering - YouTube 
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+                Mastering the <br class="hidden md:block" />
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-neon-blue via-neon-purple to-pink-500 text-glow-purple">
+                    Agent 2 Agent Protocol
+                </span>
+            </h1>
+            
+            <p class="mt-4 max-w-2xl text-lg md:text-xl text-slate-300 mx-auto mb-10 leading-relaxed">
+                The A2A protocol is an open standard that enables seamless communication and collaboration between AI agents, breaking down silos across diverse frameworks and vendors.
+            </p>
+            
+            <div class="flex justify-center gap-4">
+                <a href="#code" class="px-8 py-3 rounded-full bg-gradient-to-r from-neon-blue to-neon-purple text-white font-semibold shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)] transition-all hover:-translate-y-1">
+                    <i class="fa-solid fa-play mr-2"></i> Jump to Code
+                </a>
+                <a href="#architecture" class="px-8 py-3 rounded-full bg-slate-800 border border-slate-600 text-white font-semibold hover:bg-slate-700 transition-all">
+                    View Architecture
+                </a>
+            </div>
+        </div>
+        
+        <!-- Gradient overlays for depth -->
+        <div class="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-slate-900 to-transparent"></div>
+    </section>
+
+    <section id="architecture" class="py-20 bg-slate-900/50 border-b border-white/5 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <span class="text-neon-green font-semibold tracking-wider uppercase text-sm">Protocol Architecture</span>
+                <h2 class="text-3xl md:text-4xl font-bold mt-2 mb-4">Basic A2A Concept</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">A standardized way for any AI agent to talk to another, regardless of how they were built or who hosts them.</p>
+            </div>
+
+            <div class="glass-panel p-8 md:p-16 relative flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 max-w-5xl mx-auto">
+                
+                <!-- Agent A (Sender) -->
+                <div class="z-10 flex flex-col items-center bg-slate-900 border border-slate-700 rounded-2xl p-6 w-56 shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1 transition-transform">
+                    <div class="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mb-4 border border-neon-blue/50 shadow-[0_0_15px_rgba(59,130,246,0.4)]">
+                        <i class="fa-solid fa-robot text-3xl text-neon-blue"></i>
+                    </div>
+                    <h3 class="font-bold text-white text-lg">Agent A</h3>
+                    <div class="text-xs text-slate-400 mt-1 font-mono bg-slate-800 px-2 py-1 rounded">Client Node</div>
+                    <p class="text-xs text-slate-500 mt-3 text-center">Initiates task request</p>
+                </div>
+
+                <!-- Connection Link -->
+                <div class="flex-1 flex flex-col items-center relative w-full md:w-auto">
+                    <!-- Horizontal Line (Desktop) -->
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-neon-blue via-neon-green to-neon-purple -translate-y-1/2 hidden md:block opacity-50"></div>
+                    
+                    <!-- Vertical Line (Mobile) -->
+                    <div class="h-10 w-1 bg-gradient-to-b from-neon-blue to-neon-green block md:hidden"></div>
+                    
+                    <!-- Center Badge -->
+                    <div class="z-10 bg-slate-800 border-2 border-neon-green rounded-xl px-6 py-4 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col items-center animate-pulse-slow">
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-handshake text-neon-green"></i>
+                            <span class="font-bold text-white tracking-widest text-sm md:text-base">A2A PROTOCOL</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-widest bg-slate-900 px-2 py-1 rounded mt-2 border border-slate-700">HTTPS / JSON</span>
+                    </div>
+                    
+                    <!-- Vertical Line (Mobile) -->
+                    <div class="h-10 w-1 bg-gradient-to-b from-neon-green to-neon-purple block md:hidden"></div>
+                </div>
+
+                <!-- Agent B (Receiver) -->
+                <div class="z-10 flex flex-col items-center bg-slate-900 border border-slate-700 rounded-2xl p-6 w-56 shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-1 transition-transform">
+                    <div class="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mb-4 border border-neon-purple/50 shadow-[0_0_15px_rgba(139,92,246,0.4)]">
+                        <i class="fa-solid fa-brain text-3xl text-neon-purple"></i>
+                    </div>
+                    <h3 class="font-bold text-white text-lg">Agent B</h3>
+                    <div class="text-xs text-slate-400 mt-1 font-mono bg-slate-800 px-2 py-1 rounded">Server Node</div>
+                    <p class="text-xs text-slate-500 mt-3 text-center">Processes & responds</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="theory" class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Why Use the A2A Protocol</h2>
+                <div class="w-24 h-1 bg-gradient-to-r from-neon-blue to-neon-purple mx-auto rounded-full"></div>
+                <p class="mt-4 text-slate-400 max-w-2xl mx-auto">Implementing the A2A protocol offers significant advantages across the AI ecosystem.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Card 1 -->
+                <div class="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group">
+                    <div class="w-14 h-14 rounded-lg bg-blue-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-shield-halved text-2xl text-neon-blue"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Secure Collaboration</h3>
+                    <p class="text-slate-400 leading-relaxed">A2A uses HTTPS for secure communication and maintains opaque operations, so agents can't see the inner workings of other agents during collaboration.</p>
+                </div>
+                
+                <!-- Card 2 -->
+                <div class="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group">
+                    <div class="w-14 h-14 rounded-lg bg-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-network-wired text-2xl text-neon-purple"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Interoperability</h3>
+                    <p class="text-slate-400 leading-relaxed">A2A breaks down silos between different AI agent ecosystems, enabling agents from various vendors and frameworks to work together seamlessly.</p>
+                </div>
+                
+                <!-- Card 3 -->
+                <div class="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group">
+                    <div class="w-14 h-14 rounded-lg bg-pink-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-robot text-2xl text-pink-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Agent Autonomy</h3>
+                    <p class="text-slate-400 leading-relaxed">A2A allows agents to retain their individual capabilities and act as autonomous entities while collaborating with other agents.</p>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group">
+                    <div class="w-14 h-14 rounded-lg bg-green-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-puzzle-piece text-2xl text-neon-green"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Reduced Integration Complexity</h3>
+                    <p class="text-slate-400 leading-relaxed">The protocol standardizes agent communication, enabling teams to focus on the unique value their agents provide.</p>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="glass-panel p-8 hover:-translate-y-2 transition-transform duration-300 group md:col-span-2 lg:col-span-1">
+                    <div class="w-14 h-14 rounded-lg bg-yellow-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-stopwatch text-2xl text-yellow-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white">Support for LRO</h3>
+                    <p class="text-slate-400 leading-relaxed">The protocol supports long-running operations (LRO) and streaming with Server-Sent Events (SSE) and asynchronous execution.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="py-20 bg-slate-800/30 border-y border-white/5 relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAzNHYtNGgtMnY0aC00djJoNHY0aDJ2LTRoNHYtMmgtNHptMC0zMFYwaC0ydjRoLTR2Mmg0djRoMnYtNGg0VjJoLTR6bS0yMCAwdjRINTJWMTRIMTZ2LTR6bS0yIDRIMHYyaDE0di0yem0tNCAwdjRIMHYyaDEwdi0yem0tNiAwaC0ydjRIMHYyaDh2LTJ6IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L2c+PC9zdmc+')] opacity-20"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">A2A Live Interaction</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">Visualize how a message travels between agents in real-time.</p>
+            </div>
+
+            <div class="glass-panel p-8 max-w-4xl mx-auto">
+                <!-- Visual Nodes -->
+                <div class="flex flex-col md:flex-row items-center justify-between mb-12 relative">
+                    
+                    <!-- Connection Line -->
+                    <div class="absolute top-1/2 left-[15%] right-[15%] h-1 bg-slate-700 -translate-y-1/2 hidden md:block z-0">
+                        <div id="data-packet" class="absolute top-1/2 left-0 w-4 h-4 bg-white rounded-full shadow-[0_0_10px_white] -translate-y-1/2 opacity-0 transition-all duration-1000 ease-in-out z-10"></div>
+                    </div>
+
+                    <!-- Agent A -->
+                    <div class="flex flex-col items-center z-10 bg-slate-900 p-4 rounded-xl border border-slate-700 shadow-lg mb-8 md:mb-0">
+                        <div class="w-20 h-20 rounded-full border-2 border-neon-blue flex items-center justify-center bg-blue-900/30 relative mb-4">
+                            <div class="absolute inset-0 rounded-full animate-pulse-slow border border-neon-blue/50 scale-110"></div>
+                            <i class="fa-solid fa-robot text-3xl text-neon-blue"></i>
+                        </div>
+                        <h4 class="font-bold text-white">Agent Alice</h4>
+                        <span class="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded mt-2">Role: Coordinator</span>
+                    </div>
+
+                    <!-- Flow indicators (Mobile) -->
+                    <div class="flex md:hidden flex-col items-center gap-2 mb-8 text-slate-500">
+                        <i class="fa-solid fa-arrow-down"></i>
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </div>
+
+                    <!-- Agent B -->
+                    <div class="flex flex-col items-center z-10 bg-slate-900 p-4 rounded-xl border border-slate-700 shadow-lg">
+                        <div class="w-20 h-20 rounded-full border-2 border-neon-purple flex items-center justify-center bg-purple-900/30 relative mb-4">
+                            <div class="absolute inset-0 rounded-full animate-pulse-slow border border-neon-purple/50 scale-110" style="animation-delay: 1s;"></div>
+                            <i class="fa-solid fa-brain text-3xl text-neon-purple"></i>
+                        </div>
+                        <h4 class="font-bold text-white">Agent Bob</h4>
+                        <span class="text-xs text-slate-400 bg-slate-800 px-2 py-1 rounded mt-2">Role: Data Analyst</span>
+                    </div>
+                </div>
+
+                <!-- Interaction UI -->
+                <div class="bg-slate-900 rounded-lg p-4 border border-slate-700">
+                    <div class="flex gap-4">
+                        <input type="text" id="sim-input" class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white terminal-input placeholder-slate-500" placeholder="E.g., Analyze the latest server logs...">
+                        <button id="sim-btn" class="bg-neon-blue hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2">
+                            <span>Send via A2A</span>
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="mt-4 h-24 bg-black/50 rounded p-3 font-mono text-sm text-slate-300 overflow-y-auto" id="sim-log">
+                        <div class="text-slate-500">// System ready. Waiting for input...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="code" class="py-20 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-neon-purple font-semibold tracking-wider uppercase text-sm">Hands-on Tutorial</span>
+                <h2 class="text-3xl md:text-5xl font-bold mt-2 mb-4">Serve Your First Agent</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">Follow along with the video. We will write the code to create an agent and serve it via A2A protocol, then test it live.</p>
+            </div>
+
+            <!-- Editor & Terminal Container -->
+            <div class="flex flex-col lg:flex-row gap-6">
+                
+                <div class="flex-1 glass-panel overflow-hidden flex flex-col border border-slate-700 shadow-2xl">
+                    <!-- Editor Header -->
+                    <div class="bg-slate-900/80 px-4 py-3 flex items-center border-b border-white/10">
+                        <div class="flex gap-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-xs text-slate-400 font-mono bg-slate-800 px-3 py-1 rounded-md">server.py</div>
+                        <div class="ml-auto text-xs text-slate-500"><i class="fa-brands fa-python mr-1"></i> Python</div>
+                    </div>
+                    <!-- Editor Body -->
+                    <div class="p-6 overflow-x-auto text-sm md:text-base bg-[#1e1e1e] flex-1">
+<pre class="font-mono leading-relaxed"><code class="language-python"><span class="token keyword">import</span> asyncio
+<span class="token keyword">from</span> a2a_framework <span class="token keyword">import</span> Agent, A2AServer
+
+<span class="token comment"># 1. Initialize our intelligent agent</span>
+math_agent = Agent(
+    name=<span class="token string">"MathGenius_v1"</span>,
+    capabilities=[<span class="token string">"algebra"</span>, <span class="token string">"calculus"</span>],
+    description=<span class="token string">"Handles mathematical queries from other agents."</span>
+)
+
+<span class="token comment"># 2. Define the message handler via decorator</span>
+@math_agent.on_message
+<span class="token keyword">async def</span> <span class="token function">process_request</span>(message):
+    <span class="token function">print</span>(<span class="token string">f"[Agent] Received from {message.sender_id}: {message.content}"</span>)
+    
+    <span class="token comment"># Simulate AI processing time</span>
+    <span class="token keyword">await</span> asyncio.sleep(<span class="token number">1.5</span>) 
+    
+    response = <span class="token string">f"Result processed successfully for '{message.content}'"</span>
+    <span class="token keyword">return</span> response
+
+<span class="token comment"># 3. Configure and start the A2A Server</span>
+<span class="token keyword">if</span> __name__ == <span class="token string">"__main__"</span>:
+    server = A2AServer(agent=math_agent, host=<span class="token string">"0.0.0.0"</span>, port=<span class="token number">8080</span>)
+    server.<span class="token function">start</span>()
+</code></pre>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex flex-col gap-6">
+                    <!-- Interactive Terminal -->
+                    <div class="glass-panel overflow-hidden flex flex-col border border-slate-700 shadow-2xl flex-1">
+                        <div class="bg-slate-900/80 px-4 py-3 flex items-center justify-between border-b border-white/10">
+                            <span class="text-xs text-slate-400 font-mono"><i class="fa-solid fa-terminal mr-2"></i>bash - server_logs</span>
+                            <button id="toggleServerBtn" class="text-xs font-semibold px-3 py-1 bg-green-600/20 text-green-400 border border-green-600/50 rounded hover:bg-green-600/40 transition-colors">
+                                <i class="fa-solid fa-play mr-1"></i> Run Server
+                            </button>
+                        </div>
+                        <div class="p-4 bg-black/80 flex-1 font-mono text-sm overflow-y-auto" id="terminal-output" style="min-height: 250px; max-height: 250px;">
+                            <div class="text-slate-500 mb-2">Welcome to the interactive terminal. Click 'Run Server' to execute server.py.</div>
+                        </div>
+                    </div>
+
+                    <!-- API Tester (Only active when server is running) -->
+                    <div class="glass-panel p-6 border border-slate-700 transition-opacity duration-300 opacity-50 pointer-events-none" id="api-tester">
+                        <h3 class="text-lg font-bold mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-satellite-dish text-neon-blue"></i> External Agent Simulator
+                        </h3>
+                        <p class="text-sm text-slate-400 mb-4">Act as 'Agent Charlie' and send an A2A payload to our MathGenius server.</p>
+                        
+                        <div class="flex flex-col gap-3">
+                            <input type="text" id="api-input" class="w-full bg-slate-900 border border-slate-600 rounded p-3 text-white terminal-input font-mono text-sm" value="Calculate derivative of 2x^2" placeholder="Enter payload message...">
+                            <button id="api-send-btn" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white py-2 rounded font-semibold transition-colors flex items-center justify-center gap-2">
+                                Send Payload <i class="fa-solid fa-bolt text-yellow-400"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-slate-900 py-12 border-t border-white/10 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-6">
+                Saurav <span class="text-neon-blue">Prateek</span>
+            </div>
+            <p class="text-slate-500 mb-8 max-w-md mx-auto">
+                Thanks for watching! Don't forget to like & subscribe my YouTube channel.
+            </p>
+            <div class="flex justify-center gap-6 mb-8">
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-red-600 transition-colors">
+                    <i class="fa-brands fa-youtube"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">
+                    <i class="fa-brands fa-github"></i>
+                </a>
+                <a href="#" class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-blue-400 transition-colors">
+                    <i class="fa-brands fa-twitter"></i>
+                </a>
+            </div>
+            <p class="text-slate-600 text-sm">
+                &copy; 2026 Saurav Prateek. For educational purposes.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. Background Canvas Animation (Network Nodes) ---
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+                ctx.fill();
+            }
+        }
+
+        // Initialize particles based on screen size
+        const particleCount = Math.min(Math.floor(window.innerWidth / 15), 100);
+        for(let i=0; i<particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Draw connections
+            for(let i=0; i<particles.length; i++) {
+                for(let j=i+1; j<particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(139, 92, 246, ${1 - dist/150})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+        // --- 2. Live A2A Visualizer Logic ---
+        const simInput = document.getElementById('sim-input');
+        const simBtn = document.getElementById('sim-btn');
+        const simLog = document.getElementById('sim-log');
+        const dataPacket = document.getElementById('data-packet');
+
+        function addSimLog(message, isAgent = false) {
+            const div = document.createElement('div');
+            div.className = isAgent ? 'text-neon-purple mt-1' : 'text-slate-300 mt-1';
+            div.innerHTML = message;
+            simLog.appendChild(div);
+            simLog.scrollTop = simLog.scrollHeight;
+        }
+
+        simBtn.addEventListener('click', () => {
+            const text = simInput.value.trim();
+            if(!text) return;
+            
+            simInput.value = '';
+            simBtn.disabled = true;
+            simBtn.classList.add('opacity-50');
+            
+            addSimLog(`> Alice sending: "${text}"`);
+            
+            // Desktop Animation
+            if(window.innerWidth >= 768) {
+                dataPacket.style.opacity = '1';
+                dataPacket.style.left = '100%';
+            }
+
+            setTimeout(() => {
+                addSimLog(`[Network] Payload delivered to Bob.`);
+                
+                setTimeout(() => {
+                    addSimLog(`<i class="fa-solid fa-check mr-1"></i> Bob acknowledged and processed data.`, true);
+                    
+                    // Reset animation
+                    if(window.innerWidth >= 768) {
+                        dataPacket.style.opacity = '0';
+                        setTimeout(() => {
+                            dataPacket.style.left = '0';
+                        }, 500);
+                    }
+                    
+                    simBtn.disabled = false;
+                    simBtn.classList.remove('opacity-50');
+                }, 1000);
+                
+            }, 1000);
+        });
+
+        // --- 3. Interactive Code Walkthrough Logic ---
+        let isServerRunning = false;
+        const toggleServerBtn = document.getElementById('toggleServerBtn');
+        const terminalOutput = document.getElementById('terminal-output');
+        const apiTester = document.getElementById('api-tester');
+        const apiSendBtn = document.getElementById('api-send-btn');
+        const apiInput = document.getElementById('api-input');
+
+        function appendToTerminal(text, type='info') {
+            const line = document.createElement('div');
+            line.className = 'mb-1';
+            
+            const time = new Date().toLocaleTimeString([], {hour12: false});
+            const prefix = `<span class="text-slate-500">[${time}]</span> `;
+            
+            let content = '';
+            if(type === 'info') content = `<span class="text-slate-300">${text}</span>`;
+            else if(type === 'success') content = `<span class="text-green-400">${text}</span>`;
+            else if(type === 'error') content = `<span class="text-red-400">${text}</span>`;
+            else if(type === 'agent') content = `<span class="text-neon-purple font-bold">${text}</span>`;
+            else if(type === 'cmd') content = `> <span class="text-white">${text}</span>`;
+            
+            line.innerHTML = prefix + content;
+            terminalOutput.appendChild(line);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        toggleServerBtn.addEventListener('click', () => {
+            if(!isServerRunning) {
+                // Start Server
+                isServerRunning = true;
+                toggleServerBtn.innerHTML = '<i class="fa-solid fa-stop mr-1"></i> Stop Server';
+                toggleServerBtn.className = "text-xs font-semibold px-3 py-1 bg-red-600/20 text-red-400 border border-red-600/50 rounded hover:bg-red-600/40 transition-colors";
+                
+                appendToTerminal('python server.py', 'cmd');
+                setTimeout(() => appendToTerminal('Initializing Agent "MathGenius_v1"...', 'info'), 400);
+                setTimeout(() => appendToTerminal('Registering capabilities: [algebra, calculus]', 'info'), 800);
+                setTimeout(() => {
+                    appendToTerminal('A2A Server listening on 0.0.0.0:8080', 'success');
+                    apiTester.classList.remove('opacity-50', 'pointer-events-none');
+                }, 1200);
+
+            } else {
+                // Stop Server
+                isServerRunning = false;
+                toggleServerBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Run Server';
+                toggleServerBtn.className = "text-xs font-semibold px-3 py-1 bg-green-600/20 text-green-400 border border-green-600/50 rounded hover:bg-green-600/40 transition-colors";
+                
+                appendToTerminal('^C', 'cmd');
+                appendToTerminal('Shutting down server gracefully...', 'error');
+                apiTester.classList.add('opacity-50', 'pointer-events-none');
+            }
+        });
+
+        apiSendBtn.addEventListener('click', () => {
+            if(!isServerRunning) return;
+            const payload = apiInput.value;
+            if(!payload) return;
+            
+            apiSendBtn.disabled = true;
+            apiSendBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Sending...';
+            
+            // Simulate network request received by server
+            setTimeout(() => {
+                appendToTerminal(`Incoming connection from Agent_Charlie (192.168.1.105)`, 'info');
+                appendToTerminal(`[Agent] Received from Agent_Charlie: ${payload}`, 'agent');
+                
+                // Simulate processing delay matching the python script
+                setTimeout(() => {
+                    appendToTerminal(`200 OK - Response sent back to Agent_Charlie.`, 'success');
+                    
+                    apiSendBtn.disabled = false;
+                    apiSendBtn.innerHTML = 'Send Payload <i class="fa-solid fa-bolt text-yellow-400"></i>';
+                }, 1500);
+                
+            }, 300);
+        });
+    </script>
+</body>
+</html>
