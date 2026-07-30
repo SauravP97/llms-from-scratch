@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixture of Experts (MoE) Explained</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',    // slate-900
+                            card: '#1e293b',    // slate-800
+                            accent: '#3b82f6',  // blue-500
+                            router: '#a855f7',  // purple-500
+                        },
+                        expert: {
+                            math: '#ef4444',    // red-500
+                            code: '#10b981',    // emerald-500
+                            creative: '#f59e0b', // amber-500
+                            lang: '#ec4899',     // pink-500
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for glowing and background effects */
+        body {
+            background-color: #0f172a;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: #f8fafc;
+        }
+        
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .node-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glowing-shadow {
+            box-shadow: 0 0 20px -5px currentColor;
+        }
+
+        /* Neural Network Flow Animation */
+        .dash-flow {
+            background-image: linear-gradient(90deg, rgba(59,130,246,0.8) 50%, transparent 50%);
+            background-size: 16px 2px;
+            animation: dash-move 1s linear infinite;
+        }
+        @keyframes dash-move {
+            0% { background-position: 0px 0; }
+            100% { background-position: 16px 0; }
+        }
+
+        .svg-flow {
+            stroke-dasharray: 8 4;
+            animation: stroke-flow 1s linear infinite;
+        }
+        @keyframes stroke-flow {
+            to { stroke-dashoffset: -12; }
+        }
+
+        /* Token Trail Canvas */
+        #demo-container {
+            position: relative;
+        }
+        
+        /* Interactive button active state */
+        .prompt-btn.active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans overflow-x-hidden relative grid-bg">
+
+    <header class="w-full max-w-6xl mx-auto px-6 pt-20 pb-12 text-center relative z-10">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-brand-router font-mono text-sm mb-6 animate-pulse-slow">
+            <i class="fa-solid fa-network-wired"></i>
+            <span>Architecture Breakdown</span>
+        </div>
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 pb-2">
+            Mixture of Experts <span class="text-white">(MoE)</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto font-light">
+            Scaling up AI models without slowing them down. <br class="hidden md:block">
+            Discover how routing tokens to specialized experts unlocks massive performance.
+        </p>
+    </header>
+
+    <section class="w-full max-w-6xl mx-auto px-6 py-12 relative z-10">
+        <h2 class="text-3xl font-bold mb-8 text-center">The Core Concept</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Dense Model Card -->
+            <div class="glass-panel rounded-2xl p-8 border-t-4 border-slate-600 hover:-translate-y-1 transition-transform duration-300">
+                <div class="text-slate-400 mb-4 text-sm font-mono tracking-widest uppercase">The Old Way</div>
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                    <i class="fa-solid fa-brain text-slate-400"></i> Dense Model
+                </h3>
+                <p class="text-slate-300 mb-6 leading-relaxed">
+                    Like a "Jack of all trades." Every time you ask a question, the <strong class="text-white">entire brain</strong> activates to compute the answer. As the brain gets bigger, it gets much slower and more expensive to run.
+                </p>
+                <div class="flex justify-center p-4 bg-slate-800/50 rounded-xl rounded-xl">
+                    <div class="w-24 h-24 rounded-full bg-slate-600 flex items-center justify-center relative glowing-shadow text-slate-400">
+                        <i class="fa-solid fa-cogs text-3xl"></i>
+                        <!-- Simulated dense activation -->
+                        <div class="absolute inset-0 rounded-full border-4 border-slate-400 opacity-50 animate-ping"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MoE Model Card -->
+            <div class="glass-panel rounded-2xl p-8 border-t-4 border-brand-router hover:-translate-y-1 transition-transform duration-300">
+                <div class="text-brand-router mb-4 text-sm font-mono tracking-widest uppercase">The MoE Way</div>
+                <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                    <i class="fa-solid fa-users text-brand-router"></i> Mixture of Experts
+                </h3>
+                <p class="text-slate-300 mb-6 leading-relaxed">
+                    Like a "Hospital Triage." A <strong class="text-purple-400">Router</strong> looks at your problem and sends it only to the <strong class="text-white">relevant specialists</strong>. A massive brain, but only a tiny, fast fraction activates per word.
+                </p>
+                <div class="flex justify-center p-4 bg-slate-800/50 rounded-xl gap-4">
+                    <div class="w-12 h-12 rounded-full bg-expert-math/20 border-2 border-expert-math flex items-center justify-center text-expert-math shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-expert-code/20 border-2 border-expert-code flex items-center justify-center text-expert-code shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                        <i class="fa-solid fa-code"></i>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-slate-700/50 border-2 border-slate-600 flex items-center justify-center text-slate-500 opacity-50">
+                        <i class="fa-solid fa-pen-nib"></i>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-slate-700/50 border-2 border-slate-600 flex items-center justify-center text-slate-500 opacity-50">
+                        <i class="fa-solid fa-language"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW SECTION: Neural Network Architecture -->
+    <section class="w-full max-w-6xl mx-auto px-6 py-12 relative z-10">
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-900/30 text-emerald-400 font-mono text-xs mb-4 border border-emerald-800">
+                <i class="fa-solid fa-microchip"></i>
+                <span>Technical Architecture</span>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Under the Hood: The MoE Layer</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto">Standard Transformer models pass every token through a massive Dense Feed-Forward Network (FFN). MoE replaces it with a Router and multiple specialized, smaller FFNs.</p>
+        </div>
+        
+        <div class="glass-panel rounded-3xl p-6 md:p-10 border border-slate-700/50 flex flex-col xl:flex-row items-center justify-between gap-4 xl:gap-0 relative overflow-hidden">
+            <!-- Background grid decoration -->
+            <div class="absolute inset-0 grid-bg opacity-30 pointer-events-none"></div>
+
+            <!-- 1. Input Block -->
+            <div class="z-10 flex flex-col items-center">
+                <div class="bg-slate-800 border-2 border-slate-600 rounded-xl p-4 text-center w-32 shadow-lg">
+                    <div class="text-xs text-slate-400 font-mono mb-1">Previous Layer</div>
+                    <div class="font-bold text-white">Hidden State</div>
+                    <div class="text-[10px] text-slate-500 mt-1">(Token Rep.)</div>
+                </div>
+            </div>
+
+            <!-- Flow Line -->
+            <div class="hidden xl:block w-12 h-[2px] dash-flow opacity-70 z-10"></div>
+            <div class="xl:hidden h-8 w-[2px] bg-gradient-to-b from-blue-500 to-transparent my-2 z-10"></div>
+
+            <!-- 2. Self Attention -->
+            <div class="z-10 flex flex-col items-center">
+                <div class="bg-slate-800/80 border border-slate-600 rounded-xl p-4 text-center w-40 shadow-lg relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors"></div>
+                    <i class="fa-solid fa-circle-nodes text-blue-400 mb-2 text-xl"></i>
+                    <div class="font-bold text-white text-sm">Self-Attention</div>
+                    <div class="text-[10px] text-slate-400 mt-1">Contextualizes tokens</div>
+                </div>
+            </div>
+
+            <!-- Flow Line -->
+            <div class="hidden xl:block w-12 h-[2px] dash-flow opacity-70 z-10"></div>
+            <div class="xl:hidden h-8 w-[2px] bg-gradient-to-b from-blue-500 to-transparent my-2 z-10"></div>
+
+            <!-- 3. The MoE Block (Replaces Dense FFN) -->
+            <div class="z-10 relative p-6 rounded-2xl border-2 border-brand-router/50 bg-brand-router/5 flex flex-col md:flex-row items-center gap-6 w-full xl:w-auto mt-4 xl:mt-0">
+                <div class="absolute -top-3 left-6 bg-brand-dark px-2 text-xs font-mono text-brand-router tracking-wider rounded-md border border-brand-router/50">MoE Layer</div>
+                
+                <!-- Router -->
+                <div class="flex flex-col items-center relative z-10">
+                    <div class="bg-brand-router/20 border-2 border-brand-router rounded-full p-4 w-20 h-20 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                        <i class="fa-solid fa-route text-2xl text-brand-router"></i>
+                    </div>
+                    <div class="mt-2 text-xs font-bold text-white text-center">Router<br><span class="text-[9px] text-slate-400 font-normal">(Softmax / Top-2)</span></div>
+                </div>
+
+                <!-- Connection Lines to Experts -->
+                <div class="hidden md:flex flex-col justify-between h-48 w-16 relative z-0">
+                    <div class="absolute top-1/2 left-0 w-full h-[1px] bg-slate-700 -translate-y-1/2"></div>
+                    <!-- Diagonal branches -->
+                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <path d="M0,50 C50,50 50,12 100,12" fill="none" stroke="#3b82f6" stroke-width="2" vector-effect="non-scaling-stroke" class="svg-flow"/>
+                        <path d="M0,50 C50,50 50,37 100,37" fill="none" stroke="#475569" stroke-width="1" vector-effect="non-scaling-stroke" />
+                        <path d="M0,50 C50,50 50,62 100,62" fill="none" stroke="#475569" stroke-width="1" vector-effect="non-scaling-stroke" />
+                        <path d="M0,50 C50,50 50,87 100,87" fill="none" stroke="#10b981" stroke-width="2" vector-effect="non-scaling-stroke" class="svg-flow"/>
+                    </svg>
+                </div>
+                
+                <div class="md:hidden w-full flex justify-center py-2 relative z-0">
+                     <div class="h-12 w-[2px] bg-slate-700"></div>
+                </div>
+
+                <!-- Experts Array -->
+                <div class="flex flex-col gap-3 z-10 w-full md:w-auto flex-1">
+                    <!-- Expert 1 (Active) -->
+                    <div class="bg-blue-900/30 border-2 border-blue-500 rounded-lg p-2.5 w-full md:w-48 flex items-center gap-3 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-sm"><i class="fa-solid fa-bolt"></i></div>
+                        <div>
+                            <div class="text-xs font-bold text-white">Expert 1 (FFN)</div>
+                            <div class="text-[9px] text-blue-300">Active (Weight: 0.6)</div>
+                        </div>
+                    </div>
+                    <!-- Expert 2 (Inactive) -->
+                    <div class="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 w-full md:w-48 flex items-center gap-3 opacity-40 grayscale">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 text-sm"><i class="fa-solid fa-lock"></i></div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-300">Expert 2 (FFN)</div>
+                            <div class="text-[9px] text-slate-500">Bypassed</div>
+                        </div>
+                    </div>
+                    <!-- Expert 3 (Inactive) -->
+                    <div class="bg-slate-800/80 border border-slate-700 rounded-lg p-2.5 w-full md:w-48 flex items-center gap-3 opacity-40 grayscale">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 text-sm"><i class="fa-solid fa-lock"></i></div>
+                        <div>
+                            <div class="text-xs font-bold text-slate-300">Expert 3 (FFN)</div>
+                            <div class="text-[9px] text-slate-500">Bypassed</div>
+                        </div>
+                    </div>
+                    <!-- Expert 4 (Active) -->
+                    <div class="bg-emerald-900/30 border-2 border-emerald-500 rounded-lg p-2.5 w-full md:w-48 flex items-center gap-3 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm"><i class="fa-solid fa-bolt"></i></div>
+                        <div>
+                            <div class="text-xs font-bold text-white">Expert 4 (FFN)</div>
+                            <div class="text-[9px] text-emerald-300">Active (Weight: 0.4)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Connection Lines to Output -->
+                <div class="hidden md:flex flex-col justify-between h-48 w-16 relative z-0">
+                    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <path d="M0,12 C50,12 50,50 100,50" fill="none" stroke="#3b82f6" stroke-width="2" vector-effect="non-scaling-stroke" class="svg-flow"/>
+                        <path d="M0,87 C50,87 50,50 100,50" fill="none" stroke="#10b981" stroke-width="2" vector-effect="non-scaling-stroke" class="svg-flow"/>
+                    </svg>
+                </div>
+                
+                <div class="md:hidden w-full flex justify-center py-2 relative z-0">
+                     <div class="h-12 w-[2px] bg-slate-700"></div>
+                </div>
+
+                <!-- Weighted Sum / Add -->
+                <div class="flex flex-col items-center relative z-10">
+                    <div class="bg-slate-800 border-2 border-brand-accent rounded-full w-14 h-14 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                        <i class="fa-solid fa-plus text-brand-accent text-2xl"></i>
+                    </div>
+                    <div class="mt-2 text-xs font-bold text-white text-center w-24">Weighted Sum</div>
+                </div>
+
+            </div>
+
+            <!-- Flow Line -->
+            <div class="hidden xl:block w-12 h-[2px] dash-flow opacity-70 z-10"></div>
+            <div class="xl:hidden h-8 w-[2px] bg-gradient-to-b from-blue-500 to-transparent my-2 z-10"></div>
+
+            <!-- 4. Output Block -->
+            <div class="z-10 flex flex-col items-center">
+                <div class="bg-slate-800 border-2 border-slate-600 rounded-xl p-4 text-center w-32 shadow-lg">
+                    <div class="text-xs text-slate-400 font-mono mb-1">Next Layer</div>
+                    <div class="font-bold text-white">Output State</div>
+                    <div class="text-[10px] text-slate-500 mt-1">(Processed)</div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="w-full max-w-6xl mx-auto px-6 py-16 relative z-10">
+        <div class="text-center mb-10">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">Interactive Routing Demo</h2>
+            <p class="text-slate-400">Select a prompt to see how the Router selects the "Top-2" experts.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Column: Prompts -->
+            <div class="lg:col-span-4 flex flex-col gap-3">
+                <div class="text-sm font-mono text-slate-400 mb-2 uppercase tracking-wide">1. Select Input</div>
+                
+                <button onclick="triggerRouting(0)" class="prompt-btn glass-panel text-left p-4 rounded-xl border border-slate-700 hover:border-brand-accent transition-all duration-200 group">
+                    <i class="fa-solid fa-rocket text-slate-500 group-hover:text-brand-accent mb-2"></i>
+                    <p class="text-sm font-medium">"Calculate the physics trajectory of a rocket entering orbit."</p>
+                </button>
+                
+                <button onclick="triggerRouting(1)" class="prompt-btn glass-panel text-left p-4 rounded-xl border border-slate-700 hover:border-brand-accent transition-all duration-200 group">
+                    <i class="fa-brands fa-python text-slate-500 group-hover:text-brand-accent mb-2"></i>
+                    <p class="text-sm font-medium">"Write a Python script to optimize a database query."</p>
+                </button>
+                
+                <button onclick="triggerRouting(2)" class="prompt-btn glass-panel text-left p-4 rounded-xl border border-slate-700 hover:border-brand-accent transition-all duration-200 group">
+                    <i class="fa-solid fa-book-open text-slate-500 group-hover:text-brand-accent mb-2"></i>
+                    <p class="text-sm font-medium">"Write a beautiful Spanish sonnet about the digital age."</p>
+                </button>
+                
+                <button onclick="triggerRouting(3)" class="prompt-btn glass-panel text-left p-4 rounded-xl border border-slate-700 hover:border-brand-accent transition-all duration-200 group">
+                    <i class="fa-solid fa-robot text-slate-500 group-hover:text-brand-accent mb-2"></i>
+                    <p class="text-sm font-medium">"Develop a C++ algorithm for procedural story generation."</p>
+                </button>
+            </div>
+
+            <!-- Right Column: Visualization Canvas -->
+            <div class="lg:col-span-8 glass-panel rounded-2xl p-8 border border-slate-700 relative min-h-[500px] flex flex-col justify-center" id="demo-container">
+                
+                <!-- Internal Grid Layout for Nodes -->
+                <div class="flex flex-col md:flex-row justify-between items-center w-full h-full gap-8 relative z-10">
+                    
+                    <!-- INPUT NODE -->
+                    <div class="flex flex-col items-center gap-2 w-32 relative z-20">
+                        <div class="text-xs font-mono text-slate-400">Input Token</div>
+                        <div id="node-input" class="w-16 h-16 bg-slate-800 rounded-lg border-2 border-slate-600 flex items-center justify-center node-transition relative">
+                            <i class="fa-solid fa-keyboard text-xl text-slate-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- ROUTER NODE -->
+                    <div class="flex flex-col items-center gap-2 w-40 relative z-20">
+                        <div class="text-xs font-mono text-brand-router font-bold tracking-widest uppercase">Gating Network</div>
+                        <div id="node-router" class="w-24 h-24 bg-purple-900/40 rounded-full border-4 border-brand-router flex items-center justify-center node-transition text-brand-router shadow-[0_0_30px_rgba(168,85,247,0.2)] animate-float cursor-help" title="The Router evaluates the token and assigns probabilities to experts.">
+                            <i class="fa-solid fa-route text-3xl"></i>
+                        </div>
+                        <div class="text-[10px] text-slate-400 text-center mt-1">Selects Top-K (K=2)</div>
+                    </div>
+
+                    <!-- EXPERTS NODES -->
+                    <div class="flex flex-col gap-6 w-48 relative z-20">
+                        <!-- Math Expert -->
+                        <div id="node-expert-math" class="expert-node flex items-center gap-3 p-3 bg-slate-800/80 rounded-xl border-2 border-slate-700 node-transition opacity-60">
+                            <div class="w-10 h-10 rounded-full bg-expert-math/20 border border-expert-math flex items-center justify-center text-expert-math">
+                                <i class="fa-solid fa-square-root-variable"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-white">Math Expert</span>
+                                <span class="text-[10px] font-mono text-slate-400 wait-text">Standby</span>
+                            </div>
+                        </div>
+
+                        <!-- Code Expert -->
+                        <div id="node-expert-code" class="expert-node flex items-center gap-3 p-3 bg-slate-800/80 rounded-xl border-2 border-slate-700 node-transition opacity-60">
+                            <div class="w-10 h-10 rounded-full bg-expert-code/20 border border-expert-code flex items-center justify-center text-expert-code">
+                                <i class="fa-solid fa-code"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-white">Code Expert</span>
+                                <span class="text-[10px] font-mono text-slate-400 wait-text">Standby</span>
+                            </div>
+                        </div>
+
+                        <!-- Creative Expert -->
+                        <div id="node-expert-creative" class="expert-node flex items-center gap-3 p-3 bg-slate-800/80 rounded-xl border-2 border-slate-700 node-transition opacity-60">
+                            <div class="w-10 h-10 rounded-full bg-expert-creative/20 border border-expert-creative flex items-center justify-center text-expert-creative">
+                                <i class="fa-solid fa-pen-nib"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-white">Creative Expert</span>
+                                <span class="text-[10px] font-mono text-slate-400 wait-text">Standby</span>
+                            </div>
+                        </div>
+
+                        <!-- Language Expert -->
+                        <div id="node-expert-lang" class="expert-node flex items-center gap-3 p-3 bg-slate-800/80 rounded-xl border-2 border-slate-700 node-transition opacity-60">
+                            <div class="w-10 h-10 rounded-full bg-expert-lang/20 border border-expert-lang flex items-center justify-center text-expert-lang">
+                                <i class="fa-solid fa-language"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-white">Language Expert</span>
+                                <span class="text-[10px] font-mono text-slate-400 wait-text">Standby</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OUTPUT NODE -->
+                    <div class="flex flex-col items-center gap-2 w-32 relative z-20">
+                        <div class="text-xs font-mono text-slate-400">Output Token</div>
+                        <div id="node-output" class="w-16 h-16 bg-slate-800 rounded-lg border-2 border-slate-600 flex items-center justify-center node-transition relative">
+                            <i class="fa-solid fa-bolt text-xl text-slate-400"></i>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <!-- Status Bar overlay -->
+                <div class="absolute bottom-4 left-0 w-full text-center z-30">
+                    <span id="demo-status" class="inline-block px-4 py-1.5 bg-slate-900 rounded-full border border-slate-700 text-sm font-mono text-slate-400 transition-colors duration-300">
+                        Waiting for input...
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="w-full max-w-4xl mx-auto px-6 py-12 mb-20 relative z-10 text-center">
+        <h2 class="text-2xl font-bold mb-6">Why does MoE Matter?</h2>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="p-6 bg-brand-card/50 rounded-xl border border-slate-700/50">
+                <i class="fa-solid fa-gauge-high text-2xl text-blue-400 mb-3"></i>
+                <h4 class="font-bold mb-2">Sparse Activation</h4>
+                <p class="text-sm text-slate-400">A 47B parameter model might only use 13B active parameters per token, meaning it runs much faster.</p>
+            </div>
+            <div class="p-6 bg-brand-card/50 rounded-xl border border-slate-700/50">
+                <i class="fa-solid fa-graduation-cap text-2xl text-purple-400 mb-3"></i>
+                <h4 class="font-bold mb-2">Domain Mastery</h4>
+                <p class="text-sm text-slate-400">Experts naturally specialize during training, becoming incredibly proficient at specific syntaxes or concepts.</p>
+            </div>
+            <div class="p-6 bg-brand-card/50 rounded-xl border border-slate-700/50">
+                <i class="fa-solid fa-server text-2xl text-emerald-400 mb-3"></i>
+                <h4 class="font-bold mb-2">Compute Efficiency</h4>
+                <p class="text-sm text-slate-400">You can massively scale the total knowledge capacity of the model without exploding the inference compute cost.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Data for the scenarios
+        const scenarios = [
+            {
+                // Rocket Physics
+                experts: ['math', 'code'], 
+                colors: ['#ef4444', '#10b981'],
+                status: 'Routing to Math & Code experts for physics calculation...'
+            },
+            {
+                // DB Query Optimization
+                experts: ['code'],
+                colors: ['#10b981'],
+                status: 'Routing heavily to Code expert for SQL syntax...'
+            },
+            {
+                // Spanish Sonnet
+                experts: ['creative', 'lang'],
+                colors: ['#f59e0b', '#ec4899'],
+                status: 'Routing to Creative and Language experts...'
+            },
+            {
+                // C++ Procedural Story
+                experts: ['code', 'creative'],
+                colors: ['#10b981', '#f59e0b'],
+                status: 'Routing to Code and Creative experts...'
+            }
+        ];
+
+        let isAnimating = false;
+
+        // Helper to get center coordinates of an element relative to the container
+        function getCenterCoords(elementId) {
+            const el = document.getElementById(elementId);
+            const container = document.getElementById('demo-container');
+            const elRect = el.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            return {
+                x: elRect.left - containerRect.left + elRect.width / 2,
+                y: elRect.top - containerRect.top + elRect.height / 2
+            };
+        }
+
+        // Animates a glowing dot from start element to end element
+        function animateToken(startId, endId, colorHex = '#a855f7', duration = 800) {
+            return new Promise(resolve => {
+                const container = document.getElementById('demo-container');
+                const start = getCenterCoords(startId);
+                const end = getCenterCoords(endId);
+
+                // Create the token particle
+                const token = document.createElement('div');
+                token.className = 'absolute w-3 h-3 rounded-full z-50';
+                token.style.backgroundColor = colorHex;
+                token.style.boxShadow = `0 0 15px 3px ${colorHex}`;
+                // Center the token on the starting coordinates
+                token.style.left = `${start.x - 6}px`; 
+                token.style.top = `${start.y - 6}px`;
+
+                container.appendChild(token);
+
+                // Animate using Web Animations API
+                const animation = token.animate([
+                    { transform: 'translate(0px, 0px) scale(1)' },
+                    { transform: `translate(${end.x - start.x}px, ${end.y - start.y}px) scale(1.2)` }
+                ], {
+                    duration: duration,
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)' // smooth ease-in-out
+                });
+
+                animation.onfinish = () => {
+                    token.remove();
+                    resolve();
+                };
+            });
+        }
+
+        async function triggerRouting(scenarioIndex) {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const scenario = scenarios[scenarioIndex];
+            const statusBar = document.getElementById('demo-status');
+            const routerNode = document.getElementById('node-router');
+            const inputNode = document.getElementById('node-input');
+            const outputNode = document.getElementById('node-output');
+
+            // Reset UI
+            document.querySelectorAll('.prompt-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', idx === scenarioIndex);
+            });
+            
+            document.querySelectorAll('.expert-node').forEach(node => {
+                node.classList.remove('opacity-100', 'border-brand-accent', 'scale-105', 'shadow-lg');
+                node.classList.add('opacity-60', 'border-slate-700');
+                node.querySelector('.wait-text').textContent = 'Standby';
+                node.querySelector('.wait-text').classList.remove('text-white', 'animate-pulse');
+                node.querySelector('.wait-text').classList.add('text-slate-400');
+            });
+            
+            outputNode.classList.remove('border-brand-accent', 'bg-blue-900/40', 'shadow-[0_0_20px_rgba(59,130,246,0.4)]');
+            outputNode.querySelector('i').classList.remove('text-brand-accent');
+            outputNode.querySelector('i').classList.add('text-slate-400');
+
+            // 1. Input Phase
+            statusBar.textContent = "Tokenizing input...";
+            inputNode.classList.add('border-brand-accent', 'bg-blue-900/40', 'scale-110');
+            await new Promise(r => setTimeout(r, 400));
+            
+            // Send token to Router
+            await animateToken('node-input', 'node-router', '#3b82f6', 600);
+            inputNode.classList.remove('border-brand-accent', 'bg-blue-900/40', 'scale-110');
+            
+            // 2. Routing Phase
+            statusBar.textContent = scenario.status;
+            statusBar.classList.add('text-brand-router', 'border-brand-router', 'bg-brand-router/10');
+            
+            routerNode.classList.add('scale-110', 'bg-brand-router/60');
+            await new Promise(r => setTimeout(r, 600)); // Router "thinking" time
+            
+            // 3. Dispatch to Experts (Parallel animation)
+            const dispatchPromises = scenario.experts.map((expertType, idx) => {
+                return animateToken('node-router', `node-expert-${expertType}`, scenario.colors[idx], 700);
+            });
+            await Promise.all(dispatchPromises);
+            routerNode.classList.remove('scale-110', 'bg-brand-router/60');
+
+            // 4. Expert Processing Phase
+            scenario.experts.forEach(expertType => {
+                const node = document.getElementById(`node-expert-${expertType}`);
+                node.classList.remove('opacity-60', 'border-slate-700');
+                node.classList.add('opacity-100', 'border-current', 'scale-105', 'shadow-lg');
+                const text = node.querySelector('.wait-text');
+                text.textContent = 'Processing...';
+                text.classList.remove('text-slate-400');
+                text.classList.add('text-white', 'animate-pulse');
+            });
+            
+            statusBar.textContent = "Selected Experts are processing the request...";
+            await new Promise(r => setTimeout(r, 1200)); // Expert "thinking" time
+
+            // 5. Output Phase (Combine results)
+            statusBar.textContent = "Combining expert outputs (Weighted Sum)...";
+            const outputPromises = scenario.experts.map((expertType, idx) => {
+                const node = document.getElementById(`node-expert-${expertType}`);
+                // Stop processing visuals
+                node.classList.remove('scale-105');
+                const text = node.querySelector('.wait-text');
+                text.textContent = 'Complete';
+                text.classList.remove('animate-pulse');
+                
+                return animateToken(`node-expert-${expertType}`, 'node-output', scenario.colors[idx], 600);
+            });
+            
+            await Promise.all(outputPromises);
+
+            // 6. Final Result
+            outputNode.classList.add('border-brand-accent', 'bg-blue-900/40', 'scale-110', 'shadow-[0_0_20px_rgba(59,130,246,0.5)]');
+            outputNode.querySelector('i').classList.remove('text-slate-400');
+            outputNode.querySelector('i').classList.add('text-brand-accent');
+            
+            statusBar.textContent = "Final generation complete!";
+            statusBar.classList.remove('text-brand-router', 'border-brand-router', 'bg-brand-router/10');
+            statusBar.classList.add('text-brand-accent', 'border-brand-accent', 'bg-brand-accent/10');
+
+            // Reset status bar color after a moment
+            setTimeout(() => {
+                statusBar.classList.remove('text-brand-accent', 'border-brand-accent', 'bg-brand-accent/10');
+                outputNode.classList.remove('scale-110');
+                isAnimating = false;
+            }, 2000);
+        }
+
+        // Initial setup hook
+        window.addEventListener('resize', () => {
+            // Force redraw/recalculation logic could go here if layout shifts severely, 
+            // but the dynamic getBoundingClientRect approach handles window resizing naturally 
+            // for the next click interaction.
+        });
+    </script>
+</body>
+</html>
