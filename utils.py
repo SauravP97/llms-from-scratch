@@ -1,33 +1,77 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 import torch
 
-MAX_COL_LENGTH_FOR_VISUALIZATION = 16
-MAX_ROW_LENGTH_FOR_VISUALIZATION = 16
+MAX_COL_LENGTH_FOR_2D_VISUALIZATION = 16
+MAX_ROW_LENGTH_FOR_2D_VISUALIZATION = 16
+
+MAX_COL_LENGTH_FOR_3D_VISUALIZATION = 4
+MAX_ROW_LENGTH_FOR_3D_VISUALIZATION = 4
+
+MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION = 3
 
 
 def visualize_3d_matrix(
     matrix: torch.Tensor, x_label="", y_label="", z_label="", width=6
 ):
-    pass
+    if len(matrix.shape) != 3:
+        raise ValueError("Input matrix must be 3 dimensional for visualization")
+
+    third_dimension_size = matrix.shape[0]
+    fig, ax = plt.subplots(
+        1,
+        min(third_dimension_size, MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION),
+        figsize=(width, 6),
+    )
+
+    for i in range(third_dimension_size):
+        if i >= 3:
+            print(
+                f"Capping the 3rd dimension size at {MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION}, provided: {third_dimension_size}"
+            )
+            break
+
+        ax[i] = _visualize_matrix(
+            matrix[i].detach().numpy(),
+            ax[i],
+            MAX_COL_LENGTH_FOR_3D_VISUALIZATION,
+            MAX_ROW_LENGTH_FOR_3D_VISUALIZATION,
+            x_label,
+            y_label,
+        )
+    plt.show()
 
 
-def visualize_matrix(matrix: torch.Tensor, x_label="", y_label="", width=6):
-    # Create the plot
+def visualize_2d_matrix(matrix: torch.Tensor, x_label="", y_label="", width=6):
     matrix = matrix.detach().numpy()
-
     fig, ax = plt.subplots(figsize=(width, 6))
 
+    ax: Axes = _visualize_matrix(
+        matrix,
+        ax,
+        MAX_COL_LENGTH_FOR_2D_VISUALIZATION,
+        MAX_ROW_LENGTH_FOR_2D_VISUALIZATION,
+        x_label,
+        y_label,
+    )
+    plt.show()
+
+
+def _visualize_matrix(
+    matrix: torch.Tensor,
+    ax: Axes,
+    max_col_len: int,
+    max_row_len: int,
+    x_label="",
+    y_label="",
+) -> Axes:
     # Set limits and invert the y-axis to match standard matrix row order
     rows, cols = matrix.shape
     ax.set_xlim(-0.5, cols - 0.5)
     ax.set_ylim(rows - 0.5, -0.5)
 
-    # print(type(matrix[0,0]))
-    if (
-        cols <= MAX_COL_LENGTH_FOR_VISUALIZATION
-        and rows <= MAX_ROW_LENGTH_FOR_VISUALIZATION
-    ):
+    if cols <= max_col_len and rows <= max_row_len:
         # Loop through the grid and print each number as text
         for i in range(rows):
             for j in range(cols):
@@ -48,21 +92,19 @@ def visualize_matrix(matrix: torch.Tensor, x_label="", y_label="", width=6):
         column_capped = False
         rows_capped = False
 
-        if rows > MAX_ROW_LENGTH_FOR_VISUALIZATION:
-            print(
-                f"Max Row limit exceeded, Allowed: {MAX_ROW_LENGTH_FOR_VISUALIZATION}, Received: {rows}"
-            )
-            print(f"Capping rows at: {MAX_ROW_LENGTH_FOR_VISUALIZATION}")
-            rows = MAX_ROW_LENGTH_FOR_VISUALIZATION
+        if rows > max_row_len:
+            print(f"Max Row limit exceeded, Allowed: {max_row_len}, Received: {rows}")
+            print(f"Capping rows at: {max_row_len}")
+            rows = max_row_len
             rows_capped = True
 
-        if cols > MAX_COL_LENGTH_FOR_VISUALIZATION:
+        if cols > max_col_len:
             print(
-                f"Max Column limit exceeded, Allowed: {MAX_COL_LENGTH_FOR_VISUALIZATION}, Received: {cols}"
+                f"Max Column limit exceeded, Allowed: {max_col_len}, Received: {cols}"
             )
-            print(f"Capping columns at: {MAX_COL_LENGTH_FOR_VISUALIZATION}")
+            print(f"Capping columns at: {max_col_len}")
             column_capped = True
-            cols = MAX_COL_LENGTH_FOR_VISUALIZATION
+            cols = max_col_len
 
         ax.set_xlim(-0.5, cols + 1 - 0.5)
         ax.set_ylim(rows + 1 - 0.5, -0.5)
@@ -94,4 +136,4 @@ def visualize_matrix(matrix: torch.Tensor, x_label="", y_label="", width=6):
     ax.set_xticks(range(cols))
     ax.set_yticks(range(rows))
 
-    plt.show()
+    return ax
