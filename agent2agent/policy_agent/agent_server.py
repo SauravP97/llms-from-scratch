@@ -22,7 +22,7 @@ import uvicorn
 class PolicyAgentExecutor(AgentExecutor):
     def __init__(self) -> None:
         self.agent = PolicyAgent()
-    
+
     async def execute(
         self,
         context: RequestContext,
@@ -33,21 +33,21 @@ class PolicyAgentExecutor(AgentExecutor):
         message = new_text_message(response)
 
         await event_queue.enqueue_event(message)
-    
+
     async def cancel(
-        self, 
-        context: RequestContext, 
+        self,
+        context: RequestContext,
         event_queue: EventQueue,
     ) -> None:
         pass
 
 
-print('Running A2A Health Insurance Policy Agent')
+print("Running A2A Health Insurance Policy Agent")
 
 
 def main():
-    PORT = os.environ.get('POLICY_AGENT_PORT', 9999)
-    HOST = os.environ.get('AGENT_HOST', 'localhost')
+    PORT = os.environ.get("POLICY_AGENT_PORT", 9999)
+    HOST = os.environ.get("AGENT_HOST", "localhost")
 
     skill = AgentSkill(
         id="insurance_coverage",
@@ -64,7 +64,7 @@ def main():
             AgentInterface(
                 url=f"http://{HOST}:{PORT}/",
                 protocol_binding="JSONRPC",  # Valid options: 'JSONRPC', 'HTTP+JSON', 'GRPC'
-                protocol_version="1.0.0"
+                protocol_version="1.0.0",
             )
         ],
         version="1.0.0",
@@ -83,7 +83,7 @@ def main():
     # 2. Generate the standard A2A routes
     routes = []
     routes.extend(create_agent_card_routes(agent_card))
-    routes.extend(create_jsonrpc_routes(request_handler, '/'))
+    routes.extend(create_jsonrpc_routes(request_handler, "/"))
 
     # 3. Mount them natively to Starlette
     app = Starlette(routes=routes)
@@ -91,5 +91,5 @@ def main():
     uvicorn.run(app, host=HOST, port=PORT)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
