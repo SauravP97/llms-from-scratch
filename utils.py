@@ -9,11 +9,29 @@ MAX_ROW_LENGTH_FOR_2D_VISUALIZATION = 16
 MAX_COL_LENGTH_FOR_3D_VISUALIZATION = 4
 MAX_ROW_LENGTH_FOR_3D_VISUALIZATION = 4
 
-MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION = 3
+MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION = 4
+
+
+def visualize_matrix_list(
+    matrices: list[torch.Tensor],
+    x_label="",
+    y_label="",
+    z_label="",
+    width=6,
+    title: str = "",
+):
+    visualize_3d_matrix(
+        torch.stack(matrices, dim=0),
+        x_label=x_label,
+        y_label=y_label,
+        z_label=z_label,
+        width=width,
+        title=title,
+    )
 
 
 def visualize_3d_matrix(
-    matrix: torch.Tensor, x_label="", y_label="", z_label="", width=6
+    matrix: torch.Tensor, x_label="", y_label="", z_label="", width=6, title: str = ""
 ):
     if len(matrix.shape) != 3:
         raise ValueError("Input matrix must be 3 dimensional for visualization")
@@ -26,7 +44,7 @@ def visualize_3d_matrix(
     )
 
     for i in range(third_dimension_size):
-        if i >= 3:
+        if i >= MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION:
             print(
                 f"Capping the 3rd dimension size at {MAX_THIRD_DIMENSION_LENGTH_FOR_VISUALIZATION}, provided: {third_dimension_size}"
             )
@@ -40,10 +58,15 @@ def visualize_3d_matrix(
             x_label,
             y_label,
         )
+
+    if title:
+        plt.title(title, loc="right")
     plt.show()
 
 
-def visualize_2d_matrix(matrix: torch.Tensor, x_label="", y_label="", width=6):
+def visualize_2d_matrix(
+    matrix: torch.Tensor, x_label="", y_label="", width=6, title: str = ""
+):
     matrix = matrix.detach().numpy()
     fig, ax = plt.subplots(figsize=(width, 6))
 
@@ -55,6 +78,9 @@ def visualize_2d_matrix(matrix: torch.Tensor, x_label="", y_label="", width=6):
         x_label,
         y_label,
     )
+
+    if title:
+        plt.title(title, loc="right")
     plt.show()
 
 
@@ -91,18 +117,20 @@ def _visualize_matrix(
         # Loop through the grid and print each number as text
         column_capped = False
         rows_capped = False
+        original_row_len = rows
+        original_col_len = cols
 
         if rows > max_row_len:
-            print(f"Max Row limit exceeded, Allowed: {max_row_len}, Received: {rows}")
-            print(f"Capping rows at: {max_row_len}")
+            # print(f"Max Row limit exceeded, Allowed: {max_row_len}, Received: {rows}")
+            # print(f"Capping rows at: {max_row_len}")
             rows = max_row_len
             rows_capped = True
 
         if cols > max_col_len:
-            print(
-                f"Max Column limit exceeded, Allowed: {max_col_len}, Received: {cols}"
-            )
-            print(f"Capping columns at: {max_col_len}")
+            # print(
+            #     f"Max Column limit exceeded, Allowed: {max_col_len}, Received: {cols}"
+            # )
+            # print(f"Capping columns at: {max_col_len}")
             column_capped = True
             cols = max_col_len
 
@@ -129,6 +157,16 @@ def _visualize_matrix(
         if rows_capped:
             for j in range(cols + 1):
                 ax.text(j, rows, "...", va="center", ha="center", fontsize=14)
+
+    if x_label:
+        x_label = x_label + f" [Length: {original_col_len}]"
+    else:
+        x_label = f" [Length: {original_col_len}]"
+
+    if y_label:
+        y_label = y_label + f" [Length: {original_row_len}]"
+    else:
+        y_label = f" [Length: {original_row_len}]"
 
     # Strip away all visual chart elements
     ax.set_xlabel(x_label, fontsize=12, labelpad=10)
